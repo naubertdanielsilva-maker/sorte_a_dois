@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.10:8000';
+  static const String baseUrl = 'https://sorte-a-dois-backend.onrender.com';
 
   static Future<dynamic> get(String path) async {
     final token = await AuthService.getToken();
@@ -14,12 +14,9 @@ class ApiService {
     final response = await http
         .get(
           Uri.parse('$baseUrl$path'),
-          headers: {
-            'Content-Type': 'application/json',
-            if (token != null) 'Authorization': 'Bearer $token',
-          },
+          headers: _headers(token),
         )
-        .timeout(const Duration(seconds: 8));
+        .timeout(const Duration(seconds: 60));
 
     return _handleResponse(response);
   }
@@ -30,13 +27,23 @@ class ApiService {
     final response = await http
         .post(
           Uri.parse('$baseUrl$path'),
-          headers: {
-            'Content-Type': 'application/json',
-            if (token != null) 'Authorization': 'Bearer $token',
-          },
+          headers: _headers(token),
           body: jsonEncode(body),
         )
-        .timeout(const Duration(seconds: 8));
+        .timeout(const Duration(seconds: 60));
+
+    return _handleResponse(response);
+  }
+
+  static Future<dynamic> delete(String path) async {
+    final token = await AuthService.getToken();
+
+    final response = await http
+        .delete(
+          Uri.parse('$baseUrl$path'),
+          headers: _headers(token),
+        )
+        .timeout(const Duration(seconds: 60));
 
     return _handleResponse(response);
   }
@@ -44,24 +51,42 @@ class ApiService {
   static Future<dynamic> uploadPhoto(String path, File file) async {
     final token = await AuthService.getToken();
 
-    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'));
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl$path'),
+    );
 
     if (token != null) {
       request.headers['Authorization'] = 'Bearer $token';
     }
 
-    request.files.add(await http.MultipartFile.fromPath('file', file.path));
+    request.files.add(
+      await http.MultipartFile.fromPath('file', file.path),
+    );
 
     final streamedResponse =
-        await request.send().timeout(const Duration(seconds: 15));
+        await request.send().timeout(const Duration(seconds: 90));
 
     final response = await http.Response.fromStream(streamedResponse);
 
     return _handleResponse(response);
   }
 
+  static Map<String, String> _headers(String? token) {
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
   static dynamic _handleResponse(http.Response response) {
-    final decoded = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+    dynamic decoded;
+
+    try {
+      decoded = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+    } catch (_) {
+      decoded = response.body;
+    }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return decoded;
@@ -69,8 +94,10 @@ class ApiService {
 
     throw Exception(
       decoded is Map && decoded['detail'] != null
-          ? decoded['detail']
-          : 'Erro na comunicação com o servidor.',
+          ? decoded['detail'].toString()
+          : decoded is String && decoded.isNotEmpty
+              ? decoded
+              : 'Erro ${response.statusCode} na comunicação com o servidor.',
     );
   }
 }

@@ -91,3 +91,11 @@ class Memory(SQLModel, table=True):
     place_name: Optional[str] = None
     created_by_user_id: int = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
+class Wish(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    couple_id: int = Field(foreign_key="couple.id")
+    title: str
+    description: Optional[str] = None
+    category: Optional[str] = "Geral"
+    created_by_user_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)

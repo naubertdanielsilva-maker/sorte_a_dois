@@ -140,3 +140,19 @@ class TokenRead(SQLModel):
     access_token: str
     token_type: str = "bearer"
     user: UserRead
+class WishCreate(SQLModel):
+    couple_id: int
+    title: str
+    description: Optional[str] = None
+    category: Optional[str] = "Geral"
+    created_by_user_id: int
+
+
+class WishRead(SQLModel):
+    id: int
+    couple_id: int
+    title: str
+    description: Optional[str] = None
+    category: Optional[str] = None
+    created_by_user_id: int
+    created_at: datetime
