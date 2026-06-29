@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Amanda & Naubert</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body onload="loadApp()">
+    <main class="app">
+        <section id="screen-login" class="screen active">
+            <div class="login-card">
+                <div class="logo">❤️</div>
+                <h1>Amanda & Naubert</h1>
+                <p>Sorteios, memórias e aventuras de vocês dois.</p>
+
+                <input id="loginEmail" placeholder="E-mail">
+                <input id="loginPassword" type="password" placeholder="Senha">
+
+                <button onclick="login()">Entrar</button>
+                <p id="loginResult"></p>
+
+                <button class="ghost" onclick="showScreen('screen-admin')">Configurar primeiro acesso</button>
+            </div>
+        </section>
+
+        <section id="screen-home" class="screen">
+            <header class="top">
+                <div>
+                    <span class="small">Bem-vindos</span>
+                    <h1>Amanda & Naubert</h1>
+                </div>
+                <div class="avatar">❤️</div>
+            </header>
+
+            <div class="hero-card">
+                <h2>O que vamos viver hoje?</h2>
+                <p>Escolha um sorteio, uma memória ou veja as conquistas de vocês.</p>
+                <button onclick="showScreen('screen-draw')">🎲 Sortear agora</button>
+            </div>
+
+            <div id="homeStats" class="stats-grid"></div>
+
+            <div class="quick-grid">
+                <button onclick="showScreen('screen-draw')">🎲 Sorteios</button>
+                <button onclick="showScreen('screen-memories')">📸 Memórias</button>
+                <button onclick="showScreen('screen-achievements')">🏆 Conquistas</button>
+                <button id="quickAdminButton" class="hidden" onclick="openAdminScreen()">⚙️ Ajustes</button>
+            </div>
+        </section>
+
+        <section id="screen-draw" class="screen">
+            <header class="top">
+                <div>
+                    <span class="small">Momento surpresa</span>
+                    <h1>Sortear</h1>
+                </div>
+            </header>
+
+            <div class="card">
+                <h2>Escolha um sorteio</h2>
+                <div id="raffleCards" class="raffle-card-grid"></div>
+
+                <label>Sorteio</label>
+                <select id="drawRaffleId" onchange="selectRaffleFromDropdown()"></select>
+
+                <div id="selectedRaffleInfo" class="selected-raffle-box"></div>
+
+                <div class="draw-stage">
+                    <div id="drawCard" class="draw-card">
+                        <div class="draw-card-inner">
+                            <div class="draw-card-front">🎴</div>
+                            <div class="draw-card-back">❤️</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="draw-button" onclick="drawItem()">🎲 Sortear agora</button>
+                <div id="drawResult" class="result-box">Escolha um sorteio e clique no botão.</div>
+            </div>
+
+            <div class="card">
+                <h2>Itens deste sorteio</h2>
+                <div id="itemsList"></div>
+            </div>
+
+            <div class="card">
+                <h2>Histórico</h2>
+                <label>Casal</label>
+                <select id="historyCoupleId"></select>
+                <button onclick="loadHistory()">Ver histórico</button>
+                <div id="historyBox"></div>
+            </div>
+        </section>
+
+        <section id="screen-memories" class="screen">
+            <header class="top">
+                <div>
+                    <span class="small">Linha do tempo</span>
+                    <h1>Memórias</h1>
+                </div>
+            </header>
+
+            <div class="card">
+                <h2>Nova memória</h2>
+
+                <label>Casal</label>
+                <select id="memoryCoupleId"></select>
+
+                <input id="memoryTitle" placeholder="Título da memória">
+                <textarea id="memoryDescription" placeholder="Descrição"></textarea>
+
+                <input id="memoryPhotoUrl" placeholder="Link da foto ou URL gerada pelo upload">
+                <input id="memoryPhotoFile" type="file" accept="image/*">
+                <button onclick="uploadMemoryPhoto()">Enviar foto</button>
+                <p id="uploadResult"></p>
+
+                <input id="memoryPlaceName" placeholder="Nome do lugar">
+                <input id="memoryLatitude" placeholder="Latitude">
+                <input id="memoryLongitude" placeholder="Longitude">
+                <input id="memoryRating" placeholder="Nota de 1 a 5">
+
+                <button onclick="createMemory()">Salvar memória</button>
+                <p id="memoryResult"></p>
+            </div>
+
+            <div class="card">
+                <h2>Memórias salvas</h2>
+                <button onclick="loadMemories()">Carregar memórias</button>
+                <div id="memoriesBox"></div>
+            </div>
+        </section>
+
+        <section id="screen-achievements" class="screen">
+            <header class="top">
+                <div>
+                    <span class="small">Evolução do casal</span>
+                    <h1>Conquistas</h1>
+                </div>
+            </header>
+
+            <div class="card">
+                <h2>Pontuação</h2>
+                <label>Casal</label>
+                <select id="pointsCoupleId"></select>
+                <button onclick="loadPoints()">Ver pontuação</button>
+                <div id="pointsBox" class="result-box"></div>
+            </div>
+
+            <div class="card">
+                <h2>Conquistas desbloqueadas</h2>
+                <label>Casal</label>
+                <select id="achievementsCoupleId"></select>
+                <button onclick="loadAchievements()">Ver conquistas</button>
+                <div id="achievementsBox"></div>
+            </div>
+        </section>
+
+        <section id="screen-admin" class="screen">
+            <header class="top">
+                <div>
+                    <span class="small">Configurações</span>
+                    <h1>Administração</h1>
+                </div>
+            </header>
+
+            <div class="card">
+                <h2>Usuários</h2>
+                <input id="userName" placeholder="Nome">
+                <input id="userEmail" placeholder="E-mail">
+                <input id="userPassword" type="password" placeholder="Senha">
+                <button onclick="createUser()">Criar usuário</button>
+                <p id="userResult"></p>
+
+                <hr>
+
+                <label>Editar usuário</label>
+                <select id="editUserId" onchange="fillEditUserFields()"></select>
+                <input id="editUserName" placeholder="Novo nome">
+                <input id="editUserEmail" placeholder="Novo e-mail">
+                <input id="editUserPassword" type="password" placeholder="Nova senha">
+                <button onclick="updateUser()">Salvar alterações</button>
+                <p id="editUserResult"></p>
+            </div>
+
+            <div class="card">
+                <h2>Casal</h2>
+                <input id="coupleName" placeholder="Nome do casal. Ex: Amanda & Naubert">
+                <button onclick="createCouple()">Criar casal</button>
+                <p id="coupleResult"></p>
+            </div>
+
+            <div class="card">
+                <h2>Sorteios</h2>
+
+                <label>Casal</label>
+                <select id="raffleCoupleId" onchange="loadStats()"></select>
+
+                <input id="raffleName" placeholder="Nome do sorteio. Ex: Restaurantes">
+                <input id="raffleDescription" placeholder="Descrição">
+                <button onclick="createRaffle()">Criar sorteio</button>
+                <p id="raffleResult"></p>
+
+                <hr>
+
+                <label>Editar sorteio</label>
+                <select id="editRaffleId" onchange="fillEditRaffleFields(); loadItemsPanel();"></select>
+                <input id="editRaffleName" placeholder="Nome do sorteio">
+                <input id="editRaffleDescription" placeholder="Descrição">
+
+                <label class="check">
+                    <input type="checkbox" id="editRaffleAllowRepeat">
+                    Permitir repetir itens sorteados
+                </label>
+
+                <button onclick="updateRaffle()">Salvar sorteio</button>
+                <button class="danger" onclick="deleteRaffle()">Excluir sorteio</button>
+                <p id="editRaffleResult"></p>
+            </div>
+
+            <div class="card">
+                <h2>Itens</h2>
+
+                <label>Sorteio</label>
+                <select id="itemRaffleId" onchange="loadItemsPanel()"></select>
+
+                <input id="itemTitle" placeholder="Ideia. Ex: Ir ao Outback">
+                <textarea id="itemDescription" placeholder="Descrição opcional"></textarea>
+
+                <button onclick="createItem()">Adicionar item</button>
+                <p id="itemResult"></p>
+
+                <hr>
+
+                <label>Resetar sorteio</label>
+                <select id="resetRaffleId"></select>
+                <button onclick="resetDraw()">Resetar sorteio</button>
+                <p id="resetResult"></p>
+            </div>
+        </section>
+    </main>
+
+    <nav class="bottom-nav">
+        <button onclick="showScreen('screen-home')">🏠<span>Início</span></button>
+        <button onclick="showScreen('screen-draw')">🎲<span>Sortear</span></button>
+        <button onclick="showScreen('screen-memories')">📸<span>Memórias</span></button>
+        <button onclick="showScreen('screen-achievements')">🏆<span>Conquistas</span></button>
+        <button id="adminNavButton" class="hidden" onclick="openAdminScreen()">⚙️<span>Ajustes</span></button>
+    </nav>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <div id="confirmModal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 id="confirmTitle">Confirmar ação</h3>
+            <p id="confirmMessage">Tem certeza?</p>
+            <div class="modal-actions">
+                <button class="ghost" onclick="closeConfirm(false)">Cancelar</button>
+                <button class="danger" onclick="closeConfirm(true)">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confettiContainer" class="confetti-container"></div>
+
+    <script>
+        const ADMIN_EMAIL = "naubertdaniel.silva@gmail.com";
+
+        let cachedUsers = [];
+        let cachedCouples = [];
+        let cachedRaffles = [];
+        let cachedItems = [];
+        let uploadedMemoryPhotoUrl = "";
+        let loggedUser = null;
+        let confirmResolver = null;
+
+        function getToken() {
+            return localStorage.getItem("accessToken");
+        }
+
+        function getAuthHeaders() {
+            const token = getToken();
+            return token ? { "Authorization": `Bearer ${token}` } : {};
+        }
+
+        function getJsonHeaders() {
+            return {
+                "Content-Type": "application/json",
+                ...getAuthHeaders()
+            };
+        }
+
+        function showToast(message, type = "success") {
+            const toast = document.getElementById("toast");
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.remove("hidden");
+
+            setTimeout(() => {
+                toast.classList.add("hidden");
+            }, 2800);
+        }
+
+        function showConfirm(title, message) {
+            document.getElementById("confirmTitle").innerText = title;
+            document.getElementById("confirmMessage").innerText = message;
+            document.getElementById("confirmModal").classList.remove("hidden");
+
+            return new Promise(resolve => {
+                confirmResolver = resolve;
+            });
+        }
+
+        function closeConfirm(result) {
+            document.getElementById("confirmModal").classList.add("hidden");
+
+            if (confirmResolver) {
+                confirmResolver(result);
+                confirmResolver = null;
+            }
+        }
+
+        function launchConfetti() {
+            const container = document.getElementById("confettiContainer");
+            container.innerHTML = "";
+
+            const emojis = ["❤️", "✨", "🎉", "💜", "💕"];
+
+            for (let i = 0; i < 36; i++) {
+                const piece = document.createElement("div");
+                piece.className = "confetti-piece";
+                piece.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                piece.style.left = Math.random() * 100 + "%";
+                piece.style.animationDelay = Math.random() * 0.4 + "s";
+                piece.style.fontSize = (16 + Math.random() * 16) + "px";
+                container.appendChild(piece);
+            }
+
+            setTimeout(() => {
+                container.innerHTML = "";
+            }, 2600);
+        }
+
+        function animateDrawCard() {
+            const card = document.getElementById("drawCard");
+            card.classList.remove("flipped");
+            card.classList.add("shuffling");
+
+            setTimeout(() => {
+                card.classList.remove("shuffling");
+                card.classList.add("flipped");
+            }, 850);
+        }
+
+        function showScreen(screenId) {
+            if (screenId === "screen-admin" && !isAdmin()) {
+                showToast("A tela de ajustes é restrita ao Naubert.", "error");
+                screenId = "screen-home";
+            }
+
+            document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
+            document.getElementById(screenId).classList.add("active");
+            window.scrollTo(0, 0);
+        }
+
+        function isAdmin() {
+            return loggedUser && loggedUser.email && loggedUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        }
+
+        function updateAdminVisibility() {
+            const adminButton = document.getElementById("adminNavButton");
+            const quickAdminButton = document.getElementById("quickAdminButton");
+
+            if (isAdmin()) {
+                if (adminButton) adminButton.classList.remove("hidden");
+                if (quickAdminButton) quickAdminButton.classList.remove("hidden");
+            } else {
+                if (adminButton) adminButton.classList.add("hidden");
+                if (quickAdminButton) quickAdminButton.classList.add("hidden");
+            }
+        }
+
+        function openAdminScreen() {
+            if (!isAdmin()) {
+                showToast("A tela de ajustes é restrita ao Naubert.", "error");
+                showScreen("screen-home");
+                return;
+            }
+
+            showScreen("screen-admin");
+        }
+
+        function fillSelect(selectId, items, labelFunction) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+
+            select.innerHTML = "";
+
+            if (!items || !items.length) {
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "Nenhum registro encontrado";
+                select.appendChild(option);
+                return;
+            }
+
+            items.forEach(item => {
+                const option = document.createElement("option");
+                option.value = item.id;
+                option.textContent = labelFunction(item);
+                select.appendChild(option);
+            });
+        }
+
+        async function safeFetch(url, options = {}) {
+            try {
+                const response = await fetch(url, options);
+                const data = await response.json().catch(() => null);
+
+                if (!response.ok) {
+                    throw new Error(data?.detail || "Erro ao executar operação.");
+                }
+
+                return data;
+            } catch (error) {
+                showToast(error.message || "Erro de conexão.", "error");
+                throw error;
+            }
+        }
+
+        async function loadApp() {
+            const saved = localStorage.getItem("loggedUser");
+
+            if (saved) {
+                loggedUser = JSON.parse(saved);
+                showScreen("screen-home");
+            }
+
+            updateAdminVisibility();
+
+            await loadCouples();
+            await loadRaffles();
+            await loadUsers();
+            await loadItemsPanel();
+            await loadStats();
+        }
+
+        async function login() {
+            try {
+                const data = await safeFetch("/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: document.getElementById("loginEmail").value,
+                        password: document.getElementById("loginPassword").value
+                    })
+                });
+
+                loggedUser = data.user;
+
+                localStorage.setItem("accessToken", data.access_token);
+                localStorage.setItem("loggedUser", JSON.stringify(data.user));
+
+                document.getElementById("loginResult").innerText = "";
+                showToast(`Bem-vindo(a), ${data.user.name}!`);
+
+                updateAdminVisibility();
+
+                await loadCouples();
+                await loadRaffles();
+                await loadUsers();
+                await loadItemsPanel();
+                await loadStats();
+
+                showScreen("screen-home");
+            } catch (error) {
+                document.getElementById("loginResult").innerText = "Não foi possível entrar.";
+            }
+        }
+
+        async function loadUsers() {
+            const users = loggedUser ? [loggedUser] : [];
+            cachedUsers = users;
+
+            if (isAdmin()) {
+                try {
+                    const response = await fetch("/users/", {
+                        headers: getAuthHeaders()
+                    });
+
+                    if (response.ok) {
+                        cachedUsers = await response.json();
+                    }
+                } catch (error) {
+                    console.error("Erro ao carregar usuários:", error);
+                }
+            }
+
+            fillSelect("editUserId", cachedUsers, user => `${user.name} (${user.email})`);
+
+            fillEditUserFields();
+        }
+
+        async function loadCouples() {
+            const couples = await safeFetch("/couples/");
+            cachedCouples = couples;
+
+            fillSelect("raffleCoupleId", couples, couple => couple.name);
+            fillSelect("pointsCoupleId", couples, couple => couple.name);
+            fillSelect("achievementsCoupleId", couples, couple => couple.name);
+            fillSelect("memoryCoupleId", couples, couple => couple.name);
+            fillSelect("historyCoupleId", couples, couple => couple.name);
+        }
+
+        async function loadRaffles() {
+            const raffles = await safeFetch("/raffles/");
+            cachedRaffles = raffles;
+
+            fillSelect("itemRaffleId", raffles, raffle => `${raffle.icon || "🎲"} ${raffle.name}`);
+            fillSelect("drawRaffleId", raffles, raffle => `${raffle.icon || "🎲"} ${raffle.name}`);
+            fillSelect("resetRaffleId", raffles, raffle => `${raffle.icon || "🎲"} ${raffle.name}`);
+            fillSelect("editRaffleId", raffles, raffle => `${raffle.icon || "🎲"} ${raffle.name}`);
+
+            renderRaffleCards();
+            fillEditRaffleFields();
+            selectRaffleFromDropdown();
+        }
+
+        async function renderRaffleCards() {
+            const container = document.getElementById("raffleCards");
+            if (!container) return;
+
+            if (!cachedRaffles.length) {
+                container.innerHTML = "<p>Nenhum sorteio criado ainda.</p>";
+                return;
+            }
+
+            const cards = await Promise.all(cachedRaffles.map(async raffle => {
+                let total = 0;
+                let remaining = 0;
+
+                try {
+                    const items = await fetch(`/items/raffle/${raffle.id}`).then(r => r.json());
+                    total = items.length;
+                    remaining = items.filter(i => !i.is_drawn).length;
+                } catch {}
+
+                return `
+                    <button class="raffle-card-button" onclick="selectRaffle(${raffle.id})">
+                        <span class="raffle-icon">${raffle.icon || "🎲"}</span>
+                        <strong>${raffle.name}</strong>
+                        <small>${remaining}/${total} disponíveis</small>
+                    </button>
+                `;
+            }));
+
+            container.innerHTML = cards.join("");
+        }
+
+        function selectRaffle(raffleId) {
+            const select = document.getElementById("drawRaffleId");
+            if (select) select.value = raffleId;
+
+            selectRaffleFromDropdown();
+        }
+
+        function selectRaffleFromDropdown() {
+            const raffleId = Number(document.getElementById("drawRaffleId")?.value);
+            const raffle = cachedRaffles.find(r => r.id === raffleId);
+            const info = document.getElementById("selectedRaffleInfo");
+
+            if (!raffle || !info) return;
+
+            info.innerHTML = `
+                <strong>${raffle.icon || "🎲"} ${raffle.name}</strong>
+                <p>${raffle.description || "Sem descrição."}</p>
+            `;
+
+            loadItemsPanel();
+        }
+
+        async function loadStats() {
+            const coupleId = document.getElementById("raffleCoupleId")?.value || cachedCouples[0]?.id;
+
+            if (!coupleId) {
+                if (document.getElementById("homeStats")) document.getElementById("homeStats").innerHTML = "";
+                return;
+            }
+
+            const stats = await safeFetch(`/stats/couple/${coupleId}`);
+
+            const html = `
+                <div><strong>${stats.total_raffles}</strong><span>Sorteios</span></div>
+                <div><strong>${stats.total_items}</strong><span>Ideias</span></div>
+                <div><strong>${stats.total_drawn_items}</strong><span>Sorteadas</span></div>
+                <div><strong>${stats.total_completed_items}</strong><span>Concluídas</span></div>
+            `;
+
+            if (document.getElementById("homeStats")) document.getElementById("homeStats").innerHTML = html;
+        }
+
+        function fillEditUserFields() {
+            const userId = Number(document.getElementById("editUserId")?.value);
+            const user = cachedUsers.find(u => u.id === userId);
+
+            if (!user) return;
+
+            document.getElementById("editUserName").value = user.name;
+            document.getElementById("editUserEmail").value = user.email;
+            document.getElementById("editUserPassword").value = "";
+        }
+
+        function fillEditRaffleFields() {
+            const raffleId = Number(document.getElementById("editRaffleId")?.value);
+            const raffle = cachedRaffles.find(r => r.id === raffleId);
+
+            if (!raffle) return;
+
+            document.getElementById("editRaffleName").value = raffle.name;
+            document.getElementById("editRaffleDescription").value = raffle.description || "";
+            document.getElementById("editRaffleAllowRepeat").checked = raffle.allow_repeat;
+        }
+
+        async function loadItemsPanel() {
+            const raffleId =
+                document.getElementById("drawRaffleId")?.value ||
+                document.getElementById("itemRaffleId")?.value ||
+                document.getElementById("editRaffleId")?.value;
+
+            const list = document.getElementById("itemsList");
+
+            if (!raffleId || !list) return;
+
+            const items = await safeFetch(`/items/raffle/${raffleId}`);
+            cachedItems = items;
+
+            if (!items.length) {
+                list.innerHTML = "<p>Nenhum item cadastrado neste sorteio ainda.</p>";
+                return;
+            }
+
+            list.innerHTML = items.map(item => `
+                <div class="item-card ${item.is_drawn ? "drawn" : ""} ${item.is_completed ? "completed" : ""}">
+                    <strong>${item.title}</strong>
+                    <p>${item.description || ""}</p>
+                    <small>
+                        ${item.is_drawn ? "🎲 Já sorteado" : "Disponível"}
+                        ${item.is_completed ? " | ✅ Concluído" : ""}
+                        ${item.rating ? ` | ⭐ ${item.rating}` : ""}
+                    </small>
+
+                    ${item.comment ? `<p><em>${item.comment}</em></p>` : ""}
+
+                    ${isAdmin() ? `
+                        <input id="title-${item.id}" value="${item.title}">
+                        <textarea id="desc-${item.id}">${item.description || ""}</textarea>
+
+                        <div class="button-row">
+                            <button onclick="updateItem(${item.id})">Salvar</button>
+                            <button onclick="completeItem(${item.id})">Concluir</button>
+                            <button onclick="undoCompleteItem(${item.id})">Desfazer</button>
+                            <button class="danger" onclick="deleteItem(${item.id})">Excluir</button>
+                        </div>
+                    ` : ""}
+                </div>
+            `).join("");
+        }
+
+        async function createUser() {
+            const data = await safeFetch("/users/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: document.getElementById("userName").value,
+                    email: document.getElementById("userEmail").value,
+                    password: document.getElementById("userPassword").value
+                })
+            });
+
+            document.getElementById("userResult").innerText = `Usuário criado: ${data.name}`;
+            showToast("Usuário criado com sucesso!");
+            await loadUsers();
+        }
+
+        async function updateUser() {
+            const userId = document.getElementById("editUserId").value;
+
+            const data = await safeFetch(`/users/${userId}`, {
+                method: "PATCH",
+                headers: getJsonHeaders(),
+                body: JSON.stringify({
+                    name: document.getElementById("editUserName").value,
+                    email: document.getElementById("editUserEmail").value,
+                    password: document.getElementById("editUserPassword").value
+                })
+            });
+
+            document.getElementById("editUserResult").innerText = `Usuário atualizado: ${data.name}`;
+            showToast("Usuário atualizado.");
+            await loadUsers();
+        }
+
+        async function createCouple() {
+            const data = await safeFetch("/couples/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: document.getElementById("coupleName").value
+                })
+            });
+
+            document.getElementById("coupleResult").innerText = `Casal criado: ${data.name}`;
+            showToast("Casal criado com sucesso.");
+            await loadCouples();
+            await loadStats();
+        }
+
+        async function createRaffle() {
+            const coupleId = Number(document.getElementById("raffleCoupleId").value);
+            const userId = loggedUser?.id;
+
+            if (!userId) {
+                showToast("Faça login antes de criar sorteios.", "error");
+                return;
+            }
+
+            const data = await safeFetch("/raffles/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    couple_id: coupleId,
+                    name: document.getElementById("raffleName").value,
+                    description: document.getElementById("raffleDescription").value,
+                    icon: "🎲",
+                    color: "#ff4f8b",
+                    allow_repeat: false,
+                    created_by_user_id: userId
+                })
+            });
+
+            document.getElementById("raffleResult").innerText = `Sorteio criado: ${data.name}`;
+            showToast("Sorteio criado.");
+            await loadRaffles();
+            await loadStats();
+        }
+
+        async function updateRaffle() {
+            const raffleId = document.getElementById("editRaffleId").value;
+
+            const data = await safeFetch(`/raffles/${raffleId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: document.getElementById("editRaffleName").value,
+                    description: document.getElementById("editRaffleDescription").value,
+                    allow_repeat: document.getElementById("editRaffleAllowRepeat").checked
+                })
+            });
+
+            document.getElementById("editRaffleResult").innerText = `Sorteio atualizado: ${data.name}`;
+            showToast("Sorteio atualizado.");
+            await loadRaffles();
+        }
+
+        async function deleteRaffle() {
+            const ok = await showConfirm(
+                "Excluir sorteio",
+                "Deseja excluir este sorteio e todos os itens dele?"
+            );
+
+            if (!ok) return;
+
+            const raffleId = document.getElementById("editRaffleId").value;
+
+            const data = await safeFetch(`/raffles/${raffleId}`, {
+                method: "DELETE"
+            });
+
+            document.getElementById("editRaffleResult").innerText = data.mensagem;
+            showToast("Sorteio excluído.");
+            await loadRaffles();
+            await loadItemsPanel();
+            await loadStats();
+        }
+
+        async function createItem() {
+            const userId = loggedUser?.id;
+
+            if (!userId) {
+                showToast("Faça login antes de adicionar itens.", "error");
+                return;
+            }
+
+            const data = await safeFetch("/items/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    raffle_id: Number(document.getElementById("itemRaffleId").value),
+                    title: document.getElementById("itemTitle").value,
+                    description: document.getElementById("itemDescription").value,
+                    is_secret: false,
+                    created_by_user_id: userId
+                })
+            });
+
+            document.getElementById("itemResult").innerText = `Item adicionado: ${data.title}`;
+            showToast("Item adicionado.");
+            await loadItemsPanel();
+            await loadStats();
+            await renderRaffleCards();
+        }
+
+        async function updateItem(itemId) {
+            await safeFetch(`/items/${itemId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: document.getElementById(`title-${itemId}`).value,
+                    description: document.getElementById(`desc-${itemId}`).value
+                })
+            });
+
+            showToast("Item atualizado.");
+            await loadItemsPanel();
+        }
+
+        async function completeItem(itemId) {
+            const rating = prompt("Nota de 1 a 5:");
+            const comment = prompt("Comentário:");
+
+            await safeFetch(`/items/${itemId}/complete`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    rating: Number(rating),
+                    comment: comment
+                })
+            });
+
+            showToast("Item concluído.");
+            await loadItemsPanel();
+            await loadStats();
+            await loadPoints();
+            await loadAchievements();
+        }
+
+        async function undoCompleteItem(itemId) {
+            await safeFetch(`/items/${itemId}/undo-complete`, {
+                method: "PATCH"
+            });
+
+            showToast("Conclusão desfeita.");
+            await loadItemsPanel();
+            await loadStats();
+        }
+
+        async function deleteItem(itemId) {
+            const ok = await showConfirm(
+                "Excluir item",
+                "Deseja excluir este item do sorteio?"
+            );
+
+            if (!ok) return;
+
+            await safeFetch(`/items/${itemId}`, {
+                method: "DELETE"
+            });
+
+            showToast("Item excluído.");
+            await loadItemsPanel();
+            await loadStats();
+            await renderRaffleCards();
+        }
+
+        async function drawItem() {
+            const raffleId = document.getElementById("drawRaffleId").value;
+            const userId = loggedUser?.id;
+
+            if (!userId) {
+                showToast("Faça login antes de sortear.", "error");
+                return;
+            }
+
+            animateDrawCard();
+            document.getElementById("drawResult").innerHTML = "<div class='rolling'>🎴 Virando as cartas...</div>";
+	
+	   flipCard();
+
+            const data = await safeFetch(`/draws/${raffleId}?user_id=${userId}`, {
+                method: "POST"
+            });
+
+            setTimeout(async () => {
+                document.getElementById("drawResult").innerHTML = `
+                    <h3>🎉 Sorteado!</h3>
+                    <p class="big-result">${data.sorteado.title}</p>
+                    <p>${data.sorteado.description || ""}</p>
+                `;
+	       launchConfetti();
+	       showToast("🎉 Boa escolha!");
+
+                launchConfetti();
+                showToast("Sorteio realizado!");
+
+                await loadItemsPanel();
+                await loadStats();
+                await loadPoints();
+                await loadAchievements();
+                await renderRaffleCards();
+            }, 1000);
+        }
+
+        async function resetDraw() {
+            const ok = await showConfirm(
+                "Resetar sorteio",
+                "Todos os itens voltarão a ficar disponíveis. Deseja continuar?"
+            );
+
+            if (!ok) return;
+
+            const raffleId = document.getElementById("resetRaffleId").value;
+
+            const data = await safeFetch(`/draws/${raffleId}/reset`, {
+                method: "POST"
+            });
+
+            document.getElementById("resetResult").innerText = data.mensagem;
+            showToast("Sorteio resetado.");
+            await loadItemsPanel();
+            await loadStats();
+            await renderRaffleCards();
+        }
+
+        async function loadPoints() {
+            const coupleId = document.getElementById("pointsCoupleId")?.value || cachedCouples[0]?.id;
+            if (!coupleId) return;
+
+            const data = await safeFetch(`/achievements/points/couple/${coupleId}`);
+
+            document.getElementById("pointsBox").innerHTML = `
+                <h3>${data.total_points} pontos</h3>
+                <p>Total acumulado do casal.</p>
+            `;
+        }
+
+        async function loadAchievements() {
+            const coupleId = document.getElementById("achievementsCoupleId")?.value || cachedCouples[0]?.id;
+            if (!coupleId) return;
+
+            const achievements = await safeFetch(`/achievements/couple/${coupleId}`);
+
+            if (!achievements.length) {
+                document.getElementById("achievementsBox").innerHTML = "<p>Nenhuma conquista desbloqueada ainda.</p>";
+                return;
+            }
+
+            document.getElementById("achievementsBox").innerHTML = achievements.map(a => `
+                <div class="mini-card achievement">
+                    <strong>🏆 ${a.title}</strong>
+                    <p>${a.description || ""}</p>
+                </div>
+            `).join("");
+        }
+
+        async function uploadMemoryPhoto() {
+            const fileInput = document.getElementById("memoryPhotoFile");
+
+            if (!fileInput.files.length) {
+                showToast("Selecione uma foto primeiro.", "error");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            const response = await fetch("/uploads/photo", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+
+            uploadedMemoryPhotoUrl = data.url;
+            document.getElementById("memoryPhotoUrl").value = data.url;
+            document.getElementById("uploadResult").innerText = "Foto enviada com sucesso!";
+            showToast("Foto enviada.");
+        }
+
+        async function createMemory() {
+            const userId = loggedUser?.id;
+
+            if (!userId) {
+                showToast("Faça login antes de salvar memórias.", "error");
+                return;
+            }
+
+            const data = await safeFetch("/memories/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    couple_id: Number(document.getElementById("memoryCoupleId").value),
+                    title: document.getElementById("memoryTitle").value,
+                    description: document.getElementById("memoryDescription").value,
+                    photo_url: uploadedMemoryPhotoUrl || document.getElementById("memoryPhotoUrl").value,
+                    place_name: document.getElementById("memoryPlaceName").value,
+                    latitude: Number(document.getElementById("memoryLatitude").value) || null,
+                    longitude: Number(document.getElementById("memoryLongitude").value) || null,
+                    rating: Number(document.getElementById("memoryRating").value) || null,
+                    created_by_user_id: userId
+                })
+            });
+
+            document.getElementById("memoryResult").innerText = `Memória salva: ${data.title}`;
+            uploadedMemoryPhotoUrl = "";
+            showToast("Memória salva.");
+
+            await loadPoints();
+            await loadAchievements();
+            await loadMemories();
+        }
+
+        async function loadMemories() {
+            const coupleId = document.getElementById("memoryCoupleId")?.value || cachedCouples[0]?.id;
+            if (!coupleId) return;
+
+            const memories = await safeFetch(`/memories/couple/${coupleId}`);
+
+            if (!memories.length) {
+                document.getElementById("memoriesBox").innerHTML = "<p>Nenhuma memória salva ainda.</p>";
+                return;
+            }
+
+            document.getElementById("memoriesBox").innerHTML = memories.map(m => `
+                <div class="memory-card">
+                    ${m.photo_url ? `<img src="${m.photo_url}" class="memory-photo">` : ""}
+                    <h3>${m.title}</h3>
+                    <p>${m.description || ""}</p>
+                    <p><strong>Lugar:</strong> ${m.place_name || "Não informado"}</p>
+                    <p><strong>Nota:</strong> ${m.rating || "Sem nota"}</p>
+                    ${m.latitude && m.longitude ? `
+                        <a target="_blank" href="https://www.google.com/maps?q=${m.latitude},${m.longitude}">
+                            Ver no mapa
+                        </a>
+                    ` : ""}
+                </div>
+            `).join("");
+        }
+
+        async function loadHistory() {
+            const coupleId = document.getElementById("historyCoupleId")?.value || cachedCouples[0]?.id;
+            if (!coupleId) return;
+
+            const history = await safeFetch(`/draws/history-detailed/couple/${coupleId}`);
+
+            if (!history.length) {
+                document.getElementById("historyBox").innerHTML = "<p>Nenhum sorteio realizado ainda.</p>";
+                return;
+            }
+
+            document.getElementById("historyBox").innerHTML = history.map(h => `
+                <div class="mini-card">
+                    <strong>${h.raffle_name}</strong>
+                    <p>🎲 ${loggedUser?.name || "Alguém"} sorteou: ${h.item_title}</p>
+                    <p>${h.item_description || ""}</p>
+                    <p>Data: ${new Date(h.drawn_at).toLocaleString()}</p>
+                </div>
+            `).join("");
+        }
+    </script>
+<script src="/static/js/animations.js"></script>
+</body>
+</html>

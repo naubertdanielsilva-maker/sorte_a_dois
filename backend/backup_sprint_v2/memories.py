@@ -1,0 +1,71 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, select
+
+from app.database import get_session
+from app.models import Memory, PointsLog, Achievement
+from app.schemas import MemoryCreate, MemoryRead
+
+router = APIRouter(prefix="/memories", tags=["Memórias"])
+
+
+def unlock(session: Session, couple_id: int, code: str, title: str, description: str):
+    existing = session.exec(
+        select(Achievement).where(
+            Achievement.couple_id == couple_id,
+            Achievement.code == code
+        )
+    ).first()
+
+    if not existing:
+        session.add(Achievement(
+            couple_id=couple_id,
+            code=code,
+            title=title,
+            description=description
+        ))
+
+
+@router.post("/", response_model=MemoryRead)
+def create_memory(data: MemoryCreate, session: Session = Depends(get_session)):
+    memory = Memory(**data.dict())
+
+    session.add(memory)
+    session.add(PointsLog(
+        couple_id=data.couple_id,
+        user_id=data.created_by_user_id,
+        points=15,
+        reason="Memória criada"
+    ))
+
+    unlock(
+        session,
+        data.couple_id,
+        "first_memory",
+        "Primeira memória",
+        "Vocês registraram a primeira memória no aplicativo."
+    )
+
+    session.commit()
+    session.refresh(memory)
+
+    return memory
+
+
+@router.get("/couple/{couple_id}", response_model=list[MemoryRead])
+def list_memories(couple_id: int, session: Session = Depends(get_session)):
+    return session.exec(
+        select(Memory).where(Memory.couple_id == couple_id)
+    ).all()
+
+
+@router.delete("/{memory_id}")
+def delete_memory(memory_id: int, session: Session = Depends(get_session)):
+    memory = session.get(Memory, memory_id)
+
+    if not memory:
+        raise HTTPException(status_code=404, detail="Memória não encontrada.")
+
+    session.delete(memory)
+    session.commit()
+
+    return {"mensagem": "Memória excluída com sucesso."}
