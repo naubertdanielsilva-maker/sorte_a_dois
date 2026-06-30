@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.database import create_db_and_tables
 from app import models
-from app.routers import users, couples, raffles, items, draws, stats, auth, memories, achievements, uploads, wishes
+from app.routers import users, couples, raffles, items, draws, stats, auth, memories, achievements, uploads, wishes, debug
 
 app = FastAPI(
     title="Sorte a Dois",
@@ -34,6 +34,7 @@ app.include_router(memories.router)
 app.include_router(achievements.router)
 app.include_router(uploads.router)
 app.include_router(wishes.router)
+app.include_router(debug.router)
 
 
 @app.get("/", response_class=HTMLResponse)
