@@ -1,4 +1,4 @@
-import random
+﻿import random
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -6,6 +6,7 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import Raffle, RaffleItem, DrawHistory, PointsLog, Achievement
+from app.services.couple_service import get_main_couple_id
 
 router = APIRouter(prefix="/draws", tags=["Sorteio"])
 
@@ -33,9 +34,10 @@ def draw_item(
     user_id: int,
     session: Session = Depends(get_session)
 ):
+    couple_id = get_main_couple_id(session)
     raffle = session.get(Raffle, raffle_id)
 
-    if not raffle:
+    if not raffle or raffle.couple_id != couple_id:
         raise HTTPException(status_code=404, detail="Sorteio não encontrado.")
 
     query = select(RaffleItem).where(RaffleItem.raffle_id == raffle_id)
@@ -52,21 +54,20 @@ def draw_item(
         )
 
     selected_item = random.choice(available_items)
-
     selected_item.is_drawn = True
     selected_item.drawn_at = datetime.utcnow()
 
     history = DrawHistory(
         raffle_id=raffle.id,
         item_id=selected_item.id,
-        couple_id=raffle.couple_id,
+        couple_id=couple_id,
         drawn_by_user_id=user_id
     )
 
     session.add(selected_item)
     session.add(history)
     session.add(PointsLog(
-        couple_id=raffle.couple_id,
+        couple_id=couple_id,
         user_id=user_id,
         points=5,
         reason=f"Sorteio realizado: {raffle.name}"
@@ -74,7 +75,7 @@ def draw_item(
 
     unlock(
         session,
-        raffle.couple_id,
+        couple_id,
         "first_draw",
         "Primeiro sorteio",
         "Vocês realizaram o primeiro sorteio."
@@ -91,6 +92,12 @@ def draw_item(
 
 @router.post("/{raffle_id}/reset")
 def reset_draw(raffle_id: int, session: Session = Depends(get_session)):
+    couple_id = get_main_couple_id(session)
+    raffle = session.get(Raffle, raffle_id)
+
+    if not raffle or raffle.couple_id != couple_id:
+        raise HTTPException(status_code=404, detail="Sorteio não encontrado.")
+
     items = session.exec(
         select(RaffleItem).where(RaffleItem.raffle_id == raffle_id)
     ).all()
@@ -110,15 +117,19 @@ def reset_draw(raffle_id: int, session: Session = Depends(get_session)):
 
 @router.get("/history/couple/{couple_id}")
 def get_draw_history(couple_id: int, session: Session = Depends(get_session)):
-    history = session.exec(
-        select(DrawHistory).where(DrawHistory.couple_id == couple_id)
+    main_couple_id = get_main_couple_id(session)
+
+    return session.exec(
+        select(DrawHistory).where(DrawHistory.couple_id == main_couple_id)
     ).all()
 
-    return history
+
 @router.get("/history-detailed/couple/{couple_id}")
 def get_detailed_draw_history(couple_id: int, session: Session = Depends(get_session)):
+    main_couple_id = get_main_couple_id(session)
+
     history = session.exec(
-        select(DrawHistory).where(DrawHistory.couple_id == couple_id)
+        select(DrawHistory).where(DrawHistory.couple_id == main_couple_id)
     ).all()
 
     result = []
