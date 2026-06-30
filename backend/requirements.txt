@@ -7,3 +7,4 @@ python-jose[cryptography]
 jinja2
 sqlmodel
 bcrypt==4.1.3
+psycopg2-binary
