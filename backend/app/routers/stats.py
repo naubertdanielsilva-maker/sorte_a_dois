@@ -1,17 +1,20 @@
-from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import Raffle, RaffleItem
 from app.schemas import StatsRead
+from app.services.couple_service import get_main_couple_id
 
 router = APIRouter(prefix="/stats", tags=["Estatísticas"])
 
 
 @router.get("/couple/{couple_id}", response_model=StatsRead)
 def get_couple_stats(couple_id: int, session: Session = Depends(get_session)):
+    main_couple_id = get_main_couple_id(session)
+
     raffles = session.exec(
-        select(Raffle).where(Raffle.couple_id == couple_id)
+        select(Raffle).where(Raffle.couple_id == main_couple_id)
     ).all()
 
     raffle_ids = [raffle.id for raffle in raffles]
@@ -34,7 +37,6 @@ def get_couple_stats(couple_id: int, session: Session = Depends(get_session)):
     total_completed_items = len([item for item in items if item.is_completed])
 
     completion_percentage = 0
-
     if total_items > 0:
         completion_percentage = round((total_completed_items / total_items) * 100, 2)
 
