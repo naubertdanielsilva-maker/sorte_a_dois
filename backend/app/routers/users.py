@@ -2,11 +2,28 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import User
+from app.models import User, Couple, CoupleMember
 from app.schemas import UserCreate, UserRead, UserUpdate
 from app.security import hash_password, require_admin
 
 router = APIRouter(prefix="/users", tags=["Usuários"])
+
+
+def get_or_create_default_couple(session: Session) -> Couple:
+    couple = session.exec(select(Couple)).first()
+
+    if couple:
+        return couple
+
+    couple = Couple(
+        name="N & A",
+    )
+
+    session.add(couple)
+    session.commit()
+    session.refresh(couple)
+
+    return couple
 
 
 @router.post("/", response_model=UserRead)
@@ -21,12 +38,29 @@ def create_user(user_data: UserCreate, session: Session = Depends(get_session)):
     user = User(
         name=user_data.name,
         email=user_data.email,
-        password=hash_password(user_data.password)
+        password=hash_password(user_data.password),
     )
 
     session.add(user)
     session.commit()
     session.refresh(user)
+
+    couple = get_or_create_default_couple(session)
+
+    existing_member = session.exec(
+        select(CoupleMember).where(
+            CoupleMember.user_id == user.id,
+            CoupleMember.couple_id == couple.id,
+        )
+    ).first()
+
+    if not existing_member:
+        member = CoupleMember(
+            user_id=user.id,
+            couple_id=couple.id,
+        )
+        session.add(member)
+        session.commit()
 
     return user
 
