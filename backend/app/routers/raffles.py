@@ -38,7 +38,7 @@ def get_raffle(raffle_id: int, session: Session = Depends(get_session)):
     raffle = session.get(Raffle, raffle_id)
 
     if not raffle or raffle.couple_id != couple_id:
-        raise HTTPException(status_code=404, detail="Sorteio nÃ£o encontrado.")
+        raise HTTPException(status_code=404, detail="Sorteio não encontrado.")
 
     return raffle
 
@@ -53,7 +53,7 @@ def update_raffle(
     raffle = session.get(Raffle, raffle_id)
 
     if not raffle or raffle.couple_id != couple_id:
-        raise HTTPException(status_code=404, detail="Sorteio nÃ£o encontrado.")
+        raise HTTPException(status_code=404, detail="Sorteio não encontrado.")
 
     update_data = data.model_dump(exclude_unset=True)
 
@@ -74,7 +74,7 @@ def delete_raffle(raffle_id: int, session: Session = Depends(get_session)):
     raffle = session.get(Raffle, raffle_id)
 
     if not raffle or raffle.couple_id != couple_id:
-        raise HTTPException(status_code=404, detail="Sorteio nÃ£o encontrado.")
+        raise HTTPException(status_code=404, detail="Sorteio não encontrado.")
 
     histories = session.exec(
         select(DrawHistory).where(DrawHistory.raffle_id == raffle_id)
@@ -93,4 +93,4 @@ def delete_raffle(raffle_id: int, session: Session = Depends(get_session)):
     session.delete(raffle)
     session.commit()
 
-    return {"mensagem": "Sorteio e itens vinculados excluÃ­dos com sucesso."}
+    return {"mensagem": "Sorteio e itens vinculados excluídos com sucesso."}

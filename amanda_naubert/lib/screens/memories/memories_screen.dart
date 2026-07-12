@@ -119,7 +119,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
             if (title.isEmpty) {
               showMessage(
-                'Informe o tÃ­tulo da memÃ³ria.',
+                'Informe o título da memória.',
                 isError: true,
               );
               return;
@@ -167,8 +167,8 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
               showMessage(
                 isEditing
-                    ? 'MemÃ³ria atualizada com sucesso.'
-                    : 'MemÃ³ria salva com sucesso.',
+                    ? 'Memória atualizada com sucesso.'
+                    : 'Memória salva com sucesso.',
               );
             } catch (error) {
               showMessage(error.toString(), isError: true);
@@ -178,7 +178,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
           return AlertDialog(
             title: Text(
-              isEditing ? 'Editar memÃ³ria' : 'Nova memÃ³ria',
+              isEditing ? 'Editar memória' : 'Nova memória',
             ),
             content: SingleChildScrollView(
               child: Column(
@@ -203,7 +203,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                     controller: titleController,
                     enabled: !saving,
                     decoration: const InputDecoration(
-                      labelText: 'TÃ­tulo',
+                      labelText: 'Título',
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -212,7 +212,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                     enabled: !saving,
                     maxLines: 3,
                     decoration: const InputDecoration(
-                      labelText: 'DescriÃ§Ã£o',
+                      labelText: 'Descrição',
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -253,7 +253,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : Text(isEditing ? 'Salvar alteraÃ§Ãµes' : 'Salvar'),
+                    : Text(isEditing ? 'Salvar alterações' : 'Salvar'),
               ),
             ],
           );
@@ -271,9 +271,9 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Excluir memÃ³ria?'),
+        title: const Text('Excluir memória?'),
         content: Text(
-          'A memÃ³ria "${memory.title}" serÃ¡ removida.',
+          'A memória "${memory.title}" será removida.',
         ),
         actions: [
           TextButton(
@@ -300,7 +300,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     try {
       await MemoryService.deleteMemory(memory.id);
       await loadMemories();
-      showMessage('MemÃ³ria excluÃ­da.');
+      showMessage('Memória excluída.');
     } catch (error) {
       showMessage(error.toString(), isError: true);
     }
@@ -349,7 +349,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => openMemoryDialog(),
         icon: const Icon(Icons.add),
-        label: const Text('MemÃ³ria'),
+        label: const Text('Memória'),
       ),
       body: SafeArea(
         child: isLoading
@@ -371,7 +371,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'MemÃ³rias',
+                      'Memórias',
                       style: TextStyle(
                         color: AppTheme.darkText,
                         fontSize: 34,
@@ -400,8 +400,8 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                           const SizedBox(height: 8),
                           Text(
                             memories.isEmpty
-                                ? 'Nenhuma memÃ³ria ainda.'
-                                : '${memories.length} memÃ³ria(s) salva(s).',
+                                ? 'Nenhuma memória ainda.'
+                                : '${memories.length} memória(s) salva(s).',
                             style: const TextStyle(
                               color: AppTheme.mutedText,
                             ),
@@ -475,7 +475,7 @@ class _EmptyMemoryCard extends StatelessWidget {
           ),
           SizedBox(height: 12),
           Text(
-            'Nenhuma memÃ³ria ainda',
+            'Nenhuma memória ainda',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -483,7 +483,7 @@ class _EmptyMemoryCard extends StatelessWidget {
           ),
           SizedBox(height: 6),
           Text(
-            'Toque em MemÃ³ria para registrar o primeiro momento.',
+            'Toque em Memória para registrar o primeiro momento.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppTheme.mutedText,
@@ -574,7 +574,7 @@ class _MemoryCard extends StatelessWidget {
                       ],
                       const SizedBox(height: 10),
                       Text(
-                        '${memory.placeName?.isNotEmpty == true ? memory.placeName : "Lugar nÃ£o informado"} â€¢ $ratingText',
+                        '${memory.placeName?.isNotEmpty == true ? memory.placeName : "Lugar não informado"} • $ratingText',
                         style: const TextStyle(
                           color: AppTheme.purple,
                           fontWeight: FontWeight.bold,

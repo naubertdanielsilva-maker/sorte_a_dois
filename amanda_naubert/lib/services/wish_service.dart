@@ -48,6 +48,9 @@ class WishService {
     required String category,
   }) async {
     final dashboard = await DashboardService.loadDashboard();
+if (dashboard.coupleId == 0) {
+  throw Exception('Nenhum casal encontrado para este usuário.');
+}
     final userId = await AuthService.getUserId();
 
     if (userId == null) {

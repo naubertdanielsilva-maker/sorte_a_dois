@@ -29,8 +29,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
       setState(() => wishes = data);
     } catch (error) {
       showMessage(error.toString());
-    } finally {
-      setState(() => isLoading = false);
+      setState(() => wishes = []);
     }
   }
 

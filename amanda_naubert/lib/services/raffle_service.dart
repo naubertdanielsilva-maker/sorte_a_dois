@@ -121,7 +121,7 @@ class RaffleService {
 
     if (userId == null) {
       throw Exception(
-        'UsuÃ¡rio nÃ£o encontrado. FaÃ§a login novamente.',
+        'Usuário não encontrado. Faça login novamente.',
       );
     }
 
@@ -143,7 +143,7 @@ class RaffleService {
     final userId = await AuthService.getUserId();
 
     if (userId == null) {
-      throw Exception('UsuÃ¡rio nÃ£o encontrado.');
+      throw Exception('Usuário não encontrado.');
     }
 
     final data = await ApiService.post('/raffles/', {
@@ -191,7 +191,7 @@ class RaffleService {
     final userId = await AuthService.getUserId();
 
     if (userId == null) {
-      throw Exception('UsuÃ¡rio nÃ£o encontrado.');
+      throw Exception('Usuário não encontrado.');
     }
 
     final data = await ApiService.post('/items/', {

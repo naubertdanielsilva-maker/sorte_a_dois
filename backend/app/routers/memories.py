@@ -6,7 +6,7 @@ from app.models import Achievement, Memory, PointsLog
 from app.schemas import MemoryCreate, MemoryRead, MemoryUpdate
 from app.services.couple_service import get_main_couple_id
 
-router = APIRouter(prefix="/memories", tags=["MemÃ³rias"])
+router = APIRouter(prefix="/memories", tags=["Memórias"])
 
 
 def unlock(
@@ -48,7 +48,7 @@ def create_memory(data: MemoryCreate, session: Session = Depends(get_session)):
             couple_id=couple_id,
             user_id=data.created_by_user_id,
             points=15,
-            reason="MemÃ³ria criada",
+            reason="Memória criada",
         )
     )
 
@@ -56,8 +56,8 @@ def create_memory(data: MemoryCreate, session: Session = Depends(get_session)):
         session,
         couple_id,
         "first_memory",
-        "Primeira memÃ³ria",
-        "VocÃªs registraram a primeira memÃ³ria no aplicativo.",
+        "Primeira memória",
+        "Vocês registraram a primeira memória no aplicativo.",
     )
 
     session.commit()
@@ -86,7 +86,7 @@ def update_memory(
     memory = session.get(Memory, memory_id)
 
     if not memory or memory.couple_id != couple_id:
-        raise HTTPException(status_code=404, detail="MemÃ³ria nÃ£o encontrada.")
+        raise HTTPException(status_code=404, detail="Memória não encontrada.")
 
     update_data = data.model_dump(exclude_unset=True)
 
@@ -107,9 +107,9 @@ def delete_memory(memory_id: int, session: Session = Depends(get_session)):
     memory = session.get(Memory, memory_id)
 
     if not memory or memory.couple_id != couple_id:
-        raise HTTPException(status_code=404, detail="MemÃ³ria nÃ£o encontrada.")
+        raise HTTPException(status_code=404, detail="Memória não encontrada.")
 
     session.delete(memory)
     session.commit()
 
-    return {"mensagem": "MemÃ³ria excluÃ­da com sucesso."}
+    return {"mensagem": "Memória excluída com sucesso."}

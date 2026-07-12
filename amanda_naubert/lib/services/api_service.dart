@@ -123,7 +123,7 @@ class ApiService {
           ? decoded['detail'].toString()
           : decoded is String && decoded.isNotEmpty
               ? decoded
-              : 'Erro ${response.statusCode} na comunicaÃ§Ã£o com o servidor.',
+              : 'Erro ${response.statusCode} na comunicação com o servidor.',
     );
   }
 }

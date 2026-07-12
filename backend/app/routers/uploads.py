@@ -22,7 +22,7 @@ async def upload_photo(file: UploadFile = File(...)):
     if file.content_type and file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=400,
-            detail="Formato de imagem nÃ£o permitido.",
+            detail="Formato de imagem não permitido.",
         )
 
     original_name = file.filename or "foto.jpg"
@@ -33,7 +33,7 @@ async def upload_photo(file: UploadFile = File(...)):
     content = await file.read()
 
     if not content:
-        raise HTTPException(status_code=400, detail="A imagem estÃ¡ vazia.")
+        raise HTTPException(status_code=400, detail="A imagem está vazia.")
 
     with open(filepath, "wb") as buffer:
         buffer.write(content)

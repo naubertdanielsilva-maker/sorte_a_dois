@@ -78,7 +78,7 @@ class MemoryService {
     final userId = await AuthService.getUserId();
 
     if (userId == null) {
-      throw Exception('UsuÃ¡rio nÃ£o encontrado.');
+      throw Exception('Usuário não encontrado.');
     }
 
     final photoUrl = await uploadMemoryPhoto(photoFile);

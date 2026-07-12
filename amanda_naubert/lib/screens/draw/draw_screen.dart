@@ -271,7 +271,7 @@ class _DrawScreenState extends State<DrawScreen> {
                   enabled: !saving,
                   maxLines: 3,
                   decoration: const InputDecoration(
-                    labelText: 'DescriÃ§Ã£o',
+                    labelText: 'Descrição',
                   ),
                 ),
               ],
@@ -297,7 +297,7 @@ class _DrawScreenState extends State<DrawScreen> {
                       )
                     : Text(
                         isEditing
-                            ? 'Salvar alteraÃ§Ãµes'
+                            ? 'Salvar alterações'
                             : 'Criar',
                       ),
               ),
@@ -406,7 +406,7 @@ class _DrawScreenState extends State<DrawScreen> {
                   enabled: !saving,
                   maxLines: 3,
                   decoration: const InputDecoration(
-                    labelText: 'DescriÃ§Ã£o',
+                    labelText: 'Descrição',
                   ),
                 ),
               ],
@@ -432,7 +432,7 @@ class _DrawScreenState extends State<DrawScreen> {
                       )
                     : Text(
                         isEditing
-                            ? 'Salvar alteraÃ§Ãµes'
+                            ? 'Salvar alterações'
                             : 'Adicionar',
                       ),
               ),
@@ -454,7 +454,7 @@ class _DrawScreenState extends State<DrawScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Excluir sorteio?'),
         content: Text(
-          'O sorteio "${raffle.name}" e todas as ideias dele serÃ£o excluÃ­dos.',
+          'O sorteio "${raffle.name}" e todas as ideias dele serão excluídos.',
         ),
         actions: [
           TextButton(
@@ -481,7 +481,7 @@ class _DrawScreenState extends State<DrawScreen> {
     try {
       await RaffleService.deleteRaffle(raffle.id);
       await loadRaffles();
-      showMessage('Sorteio excluÃ­do.');
+      showMessage('Sorteio excluído.');
     } catch (error) {
       showMessage(error.toString(), isError: true);
     }
@@ -501,7 +501,7 @@ class _DrawScreenState extends State<DrawScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Excluir ideia?'),
         content: Text(
-          'A ideia "${item.title}" serÃ¡ excluÃ­da.',
+          'A ideia "${item.title}" será excluída.',
         ),
         actions: [
           TextButton(
@@ -528,7 +528,7 @@ class _DrawScreenState extends State<DrawScreen> {
     try {
       await RaffleService.deleteItem(item.id);
       await loadRaffles(selectedId: raffle.id);
-      showMessage('Ideia excluÃ­da.');
+      showMessage('Ideia excluída.');
     } catch (error) {
       showMessage(error.toString(), isError: true);
     }
@@ -611,7 +611,7 @@ class _DrawScreenState extends State<DrawScreen> {
                             ),
                             const SizedBox(height: 8),
                             const Text(
-                              'Crie o primeiro sorteio para comeÃ§ar.',
+                              'Crie o primeiro sorteio para começar.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: AppTheme.mutedText,
@@ -839,7 +839,7 @@ class _RaffleCard extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          '${raffle.availableItems}/${raffle.totalItems} ideias disponÃ­veis',
+          '${raffle.availableItems}/${raffle.totalItems} ideias disponíveis',
         ),
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
@@ -895,10 +895,10 @@ class _ItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = item.isCompleted
-        ? 'ConcluÃ­do'
+        ? 'Concluído'
         : item.isDrawn
-            ? 'JÃ¡ sorteado'
-            : 'DisponÃ­vel';
+            ? 'Já sorteado'
+            : 'Disponível';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -926,7 +926,7 @@ class _ItemCard extends StatelessWidget {
         ),
         subtitle: Text(
           item.description?.isNotEmpty == true
-              ? '${item.description} â€¢ $status'
+              ? '${item.description} • $status'
               : status,
         ),
         trailing: PopupMenuButton<String>(

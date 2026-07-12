@@ -24,7 +24,7 @@ def get_valid_raffle(
     raffle = session.get(Raffle, raffle_id)
 
     if not raffle or raffle.couple_id != couple_id:
-        raise HTTPException(status_code=404, detail="Sorteio nÃ£o encontrado.")
+        raise HTTPException(status_code=404, detail="Sorteio não encontrado.")
 
     return raffle
 
@@ -36,7 +36,7 @@ def get_valid_item(
     item = session.get(RaffleItem, item_id)
 
     if not item:
-        raise HTTPException(status_code=404, detail="Item nÃ£o encontrado.")
+        raise HTTPException(status_code=404, detail="Item não encontrado.")
 
     raffle = get_valid_raffle(item.raffle_id, session)
     return item, raffle
@@ -107,7 +107,7 @@ def complete_item(
             couple_id=raffle.couple_id,
             user_id=item.created_by_user_id,
             points=10,
-            reason=f"Item concluÃ­do: {item.title}",
+            reason=f"Item concluído: {item.title}",
         )
     )
 
@@ -123,8 +123,8 @@ def complete_item(
             Achievement(
                 couple_id=raffle.couple_id,
                 code="first_completed",
-                title="Primeira aventura concluÃ­da",
-                description="VocÃªs concluÃ­ram o primeiro item sorteado.",
+                title="Primeira aventura concluída",
+                description="Vocês concluíram o primeiro item sorteado.",
             )
         )
 
@@ -169,4 +169,4 @@ def delete_item(
     session.delete(item)
     session.commit()
 
-    return {"mensagem": "Item excluÃ­do com sucesso."}
+    return {"mensagem": "Item excluído com sucesso."}
