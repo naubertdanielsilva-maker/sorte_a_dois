@@ -1,5 +1,6 @@
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
 from sqlmodel import SQLModel
 
 
@@ -124,6 +125,16 @@ class MemoryCreate(SQLModel):
     created_by_user_id: int
 
 
+class MemoryUpdate(SQLModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    photo_url: Optional[str] = None
+    rating: Optional[int] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    place_name: Optional[str] = None
+
+
 class MemoryRead(SQLModel):
     id: int
     couple_id: int
@@ -136,10 +147,14 @@ class MemoryRead(SQLModel):
     place_name: Optional[str]
     created_by_user_id: int
     created_at: datetime
+
+
 class TokenRead(SQLModel):
     access_token: str
     token_type: str = "bearer"
     user: UserRead
+
+
 class WishCreate(SQLModel):
     couple_id: int
     title: str

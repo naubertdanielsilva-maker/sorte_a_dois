@@ -6,7 +6,8 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://sorte-a-dois-backend.onrender.com';
+  static const String baseUrl =
+      'https://sorte-a-dois-backend.onrender.com';
 
   static Future<dynamic> get(String path) async {
     final token = await AuthService.getToken();
@@ -21,11 +22,31 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  static Future<dynamic> post(String path, Map<String, dynamic> body) async {
+  static Future<dynamic> post(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
     final token = await AuthService.getToken();
 
     final response = await http
         .post(
+          Uri.parse('$baseUrl$path'),
+          headers: _headers(token),
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 60));
+
+    return _handleResponse(response);
+  }
+
+  static Future<dynamic> patch(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    final token = await AuthService.getToken();
+
+    final response = await http
+        .patch(
           Uri.parse('$baseUrl$path'),
           headers: _headers(token),
           body: jsonEncode(body),
@@ -48,7 +69,10 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  static Future<dynamic> uploadPhoto(String path, File file) async {
+  static Future<dynamic> uploadPhoto(
+    String path,
+    File file,
+  ) async {
     final token = await AuthService.getToken();
 
     final request = http.MultipartRequest(
@@ -68,7 +92,6 @@ class ApiService {
         await request.send().timeout(const Duration(seconds: 90));
 
     final response = await http.Response.fromStream(streamedResponse);
-
     return _handleResponse(response);
   }
 
@@ -83,12 +106,15 @@ class ApiService {
     dynamic decoded;
 
     try {
-      decoded = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+      decoded = response.body.isNotEmpty
+          ? jsonDecode(response.body)
+          : null;
     } catch (_) {
       decoded = response.body;
     }
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
+    if (response.statusCode >= 200 &&
+        response.statusCode < 300) {
       return decoded;
     }
 
@@ -97,7 +123,7 @@ class ApiService {
           ? decoded['detail'].toString()
           : decoded is String && decoded.isNotEmpty
               ? decoded
-              : 'Erro ${response.statusCode} na comunicação com o servidor.',
+              : 'Erro ${response.statusCode} na comunicaÃ§Ã£o com o servidor.',
     );
   }
 }

@@ -9,7 +9,7 @@ class RaffleItem {
   final bool isDrawn;
   final bool isCompleted;
 
-  RaffleItem({
+  const RaffleItem({
     required this.id,
     required this.raffleId,
     required this.title,
@@ -20,12 +20,12 @@ class RaffleItem {
 
   factory RaffleItem.fromJson(Map<String, dynamic> json) {
     return RaffleItem(
-      id: json['id'],
-      raffleId: json['raffle_id'],
-      title: json['title'],
-      description: json['description'],
-      isDrawn: json['is_drawn'] ?? false,
-      isCompleted: json['is_completed'] ?? false,
+      id: json['id'] as int,
+      raffleId: json['raffle_id'] as int,
+      title: json['title'] as String,
+      description: json['description'] as String?,
+      isDrawn: json['is_drawn'] as bool? ?? false,
+      isCompleted: json['is_completed'] as bool? ?? false,
     );
   }
 }
@@ -39,7 +39,7 @@ class Raffle {
   final int totalItems;
   final int availableItems;
 
-  Raffle({
+  const Raffle({
     required this.id,
     required this.coupleId,
     required this.name,
@@ -51,11 +51,11 @@ class Raffle {
 
   factory Raffle.fromJson(Map<String, dynamic> json) {
     return Raffle(
-      id: json['id'],
-      coupleId: json['couple_id'],
-      name: json['name'],
-      description: json['description'],
-      icon: json['icon'] ?? '🎲',
+      id: json['id'] as int,
+      coupleId: json['couple_id'] as int,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      icon: json['icon'] as String? ?? 'ðŸŽ²',
     );
   }
 
@@ -78,13 +78,20 @@ class Raffle {
 class RaffleService {
   static Future<List<Raffle>> getRafflesWithCounts() async {
     final data = await ApiService.get('/raffles/');
-    final raffles = (data as List).map((e) => Raffle.fromJson(e)).toList();
+    final raffles = (data as List)
+        .map(
+          (item) => Raffle.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
 
-    final List<Raffle> result = [];
+    final result = <Raffle>[];
 
     for (final raffle in raffles) {
       final items = await getItems(raffle.id);
-      final available = items.where((item) => !item.isDrawn).length;
+      final available =
+          items.where((item) => !item.isDrawn).length;
 
       result.add(
         raffle.copyWithCount(
@@ -99,18 +106,33 @@ class RaffleService {
 
   static Future<List<RaffleItem>> getItems(int raffleId) async {
     final data = await ApiService.get('/items/raffle/$raffleId');
-    return (data as List).map((e) => RaffleItem.fromJson(e)).toList();
+
+    return (data as List)
+        .map(
+          (item) => RaffleItem.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
   }
 
   static Future<RaffleItem> draw(int raffleId) async {
     final userId = await AuthService.getUserId();
 
     if (userId == null) {
-      throw Exception('Usuário não encontrado. Faça login novamente.');
+      throw Exception(
+        'UsuÃ¡rio nÃ£o encontrado. FaÃ§a login novamente.',
+      );
     }
 
-    final data = await ApiService.post('/draws/$raffleId?user_id=$userId', {});
-    return RaffleItem.fromJson(data['sorteado']);
+    final data = await ApiService.post(
+      '/draws/$raffleId?user_id=$userId',
+      {},
+    );
+
+    return RaffleItem.fromJson(
+      Map<String, dynamic>.from(data['sorteado'] as Map),
+    );
   }
 
   static Future<Raffle> createRaffle({
@@ -121,20 +143,44 @@ class RaffleService {
     final userId = await AuthService.getUserId();
 
     if (userId == null) {
-      throw Exception('Usuário não encontrado.');
+      throw Exception('UsuÃ¡rio nÃ£o encontrado.');
     }
 
     final data = await ApiService.post('/raffles/', {
       'couple_id': coupleId,
       'name': name,
       'description': description,
-      'icon': '🎲',
+      'icon': 'ðŸŽ²',
       'color': '#ff4f8b',
       'allow_repeat': false,
       'created_by_user_id': userId,
     });
 
-    return Raffle.fromJson(data);
+    return Raffle.fromJson(
+      Map<String, dynamic>.from(data as Map),
+    );
+  }
+
+  static Future<Raffle> updateRaffle({
+    required int raffleId,
+    required String name,
+    required String description,
+  }) async {
+    final data = await ApiService.patch(
+      '/raffles/$raffleId',
+      {
+        'name': name,
+        'description': description,
+      },
+    );
+
+    return Raffle.fromJson(
+      Map<String, dynamic>.from(data as Map),
+    );
+  }
+
+  static Future<void> deleteRaffle(int raffleId) async {
+    await ApiService.delete('/raffles/$raffleId');
   }
 
   static Future<RaffleItem> createItem({
@@ -145,7 +191,7 @@ class RaffleService {
     final userId = await AuthService.getUserId();
 
     if (userId == null) {
-      throw Exception('Usuário não encontrado.');
+      throw Exception('UsuÃ¡rio nÃ£o encontrado.');
     }
 
     final data = await ApiService.post('/items/', {
@@ -156,6 +202,30 @@ class RaffleService {
       'created_by_user_id': userId,
     });
 
-    return RaffleItem.fromJson(data);
+    return RaffleItem.fromJson(
+      Map<String, dynamic>.from(data as Map),
+    );
+  }
+
+  static Future<RaffleItem> updateItem({
+    required int itemId,
+    required String title,
+    required String description,
+  }) async {
+    final data = await ApiService.patch(
+      '/items/$itemId',
+      {
+        'title': title,
+        'description': description,
+      },
+    );
+
+    return RaffleItem.fromJson(
+      Map<String, dynamic>.from(data as Map),
+    );
+  }
+
+  static Future<void> deleteItem(int itemId) async {
+    await ApiService.delete('/items/$itemId');
   }
 }

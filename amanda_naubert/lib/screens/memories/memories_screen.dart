@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../services/api_service.dart';
 import '../../services/memory_service.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/info_tile.dart';
 import '../../widgets/premium_card.dart';
 
 class MemoriesScreen extends StatefulWidget {
@@ -26,35 +26,57 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
   }
 
   Future<void> loadMemories() async {
-    setState(() => isLoading = true);
+    if (mounted) {
+      setState(() => isLoading = true);
+    }
 
     try {
       final data = await MemoryService.getMemories();
+
+      if (!mounted) {
+        return;
+      }
+
       setState(() => memories = data);
     } catch (error) {
-      showMessage(error.toString());
+      showMessage(error.toString(), isError: true);
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
-  Future<void> openCreateMemoryDialog() async {
-    final titleController = TextEditingController();
-    final descriptionController = TextEditingController();
-    final placeController = TextEditingController();
-    final ratingController = TextEditingController(text: '5');
+  Future<void> openMemoryDialog({
+    MemoryItem? memory,
+  }) async {
+    final isEditing = memory != null;
+    final titleController = TextEditingController(
+      text: memory?.title ?? '',
+    );
+    final descriptionController = TextEditingController(
+      text: memory?.description ?? '',
+    );
+    final placeController = TextEditingController(
+      text: memory?.placeName ?? '',
+    );
+    final ratingController = TextEditingController(
+      text: (memory?.rating ?? 5).toString(),
+    );
 
     File? selectedPhoto;
+    bool saving = false;
 
-    await showDialog(
+    await showDialog<void>(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setDialogState) {
+      barrierDismissible: !saving,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
           Future<void> pickPhoto() async {
-            final picker = ImagePicker();
-            final picked = await picker.pickImage(
+            final picked = await ImagePicker().pickImage(
               source: ImageSource.gallery,
               imageQuality: 75,
+              maxWidth: 1600,
             );
 
             if (picked != null) {
@@ -64,112 +86,241 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
             }
           }
 
+          Widget photoPreview() {
+            if (selectedPhoto != null) {
+              return Image.file(
+                selectedPhoto!,
+                height: 170,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              );
+            }
+
+            final currentPhoto = fullPhotoUrl(memory?.photoUrl);
+
+            if (currentPhoto.isNotEmpty) {
+              return Image.network(
+                currentPhoto,
+                height: 170,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const _PhotoPlaceholder(),
+              );
+            }
+
+            return const _PhotoPlaceholder();
+          }
+
+          Future<void> save() async {
+            final title = titleController.text.trim();
+            final rating =
+                int.tryParse(ratingController.text.trim()) ?? 5;
+
+            if (title.isEmpty) {
+              showMessage(
+                'Informe o tÃ­tulo da memÃ³ria.',
+                isError: true,
+              );
+              return;
+            }
+
+            if (rating < 1 || rating > 5) {
+              showMessage(
+                'A nota deve estar entre 1 e 5.',
+                isError: true,
+              );
+              return;
+            }
+
+            setDialogState(() => saving = true);
+
+            try {
+              if (isEditing) {
+                await MemoryService.updateMemory(
+                  memoryId: memory.id,
+                  title: title,
+                  description:
+                      descriptionController.text.trim(),
+                  placeName: placeController.text.trim(),
+                  rating: rating,
+                  currentPhotoUrl: memory.photoUrl,
+                  newPhotoFile: selectedPhoto,
+                );
+              } else {
+                await MemoryService.createMemory(
+                  title: title,
+                  description:
+                      descriptionController.text.trim(),
+                  placeName: placeController.text.trim(),
+                  rating: rating,
+                  photoFile: selectedPhoto,
+                );
+              }
+
+              if (!mounted) {
+                return;
+              }
+
+              Navigator.of(dialogContext).pop();
+              await loadMemories();
+
+              showMessage(
+                isEditing
+                    ? 'MemÃ³ria atualizada com sucesso.'
+                    : 'MemÃ³ria salva com sucesso.',
+              );
+            } catch (error) {
+              showMessage(error.toString(), isError: true);
+              setDialogState(() => saving = false);
+            }
+          }
+
           return AlertDialog(
-            title: const Text('Nova memória'),
+            title: Text(
+              isEditing ? 'Editar memÃ³ria' : 'Nova memÃ³ria',
+            ),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (selectedPhoto != null)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.file(
-                        selectedPhoto!,
-                        height: 150,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  else
-                    Container(
-                      height: 130,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: AppTheme.softPurple,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.photo_camera_rounded,
-                          size: 42,
-                          color: AppTheme.purple,
-                        ),
-                      ),
-                    ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: photoPreview(),
+                  ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
-                    onPressed: pickPhoto,
+                    onPressed: saving ? null : pickPhoto,
                     icon: const Icon(Icons.image_rounded),
-                    label: const Text('Escolher foto'),
+                    label: Text(
+                      selectedPhoto == null
+                          ? 'Escolher foto'
+                          : 'Trocar foto',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: titleController,
-                    decoration: const InputDecoration(labelText: 'Título'),
+                    enabled: !saving,
+                    decoration: const InputDecoration(
+                      labelText: 'TÃ­tulo',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: descriptionController,
-                    decoration: const InputDecoration(labelText: 'Descrição'),
+                    enabled: !saving,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'DescriÃ§Ã£o',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: placeController,
-                    decoration: const InputDecoration(labelText: 'Lugar'),
+                    enabled: !saving,
+                    decoration: const InputDecoration(
+                      labelText: 'Lugar',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: ratingController,
+                    enabled: !saving,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Nota de 1 a 5'),
+                    decoration: const InputDecoration(
+                      labelText: 'Nota de 1 a 5',
+                    ),
                   ),
                 ],
               ),
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: saving
+                    ? null
+                    : () => Navigator.of(dialogContext).pop(),
                 child: const Text('Cancelar'),
               ),
               FilledButton(
-                onPressed: () async {
-                  try {
-                    await MemoryService.createMemory(
-                      title: titleController.text.trim(),
-                      description: descriptionController.text.trim(),
-                      placeName: placeController.text.trim(),
-                      rating: int.tryParse(ratingController.text.trim()) ?? 5,
-                      photoFile: selectedPhoto,
-                    );
-
-                    if (!mounted) return;
-
-                    Navigator.pop(context);
-                    await loadMemories();
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Memória salva com sucesso')),
-                    );
-                  } catch (error) {
-                    showMessage(error.toString());
-                  }
-                },
-                child: const Text('Salvar'),
+                onPressed: saving ? null : save,
+                child: saving
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(isEditing ? 'Salvar alteraÃ§Ãµes' : 'Salvar'),
               ),
             ],
           );
         },
       ),
     );
+
+    titleController.dispose();
+    descriptionController.dispose();
+    placeController.dispose();
+    ratingController.dispose();
   }
 
-  void showMessage(String message) {
-    if (!mounted) return;
+  Future<void> confirmDelete(MemoryItem memory) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Excluir memÃ³ria?'),
+        content: Text(
+          'A memÃ³ria "${memory.title}" serÃ¡ removida.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    try {
+      await MemoryService.deleteMemory(memory.id);
+      await loadMemories();
+      showMessage('MemÃ³ria excluÃ­da.');
+    } catch (error) {
+      showMessage(error.toString(), isError: true);
+    }
+  }
+
+  void showMessage(
+    String message, {
+    bool isError = false,
+  }) {
+    if (!mounted) {
+      return;
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message.replaceAll('Exception: ', '')),
-        backgroundColor: Colors.red,
+        content: Text(
+          message.replaceAll('Exception: ', ''),
+        ),
+        backgroundColor:
+            isError ? Colors.red : AppTheme.purple,
       ),
     );
   }
@@ -180,9 +331,15 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
   }
 
   String fullPhotoUrl(String? url) {
-    if (url == null || url.isEmpty) return '';
-    if (url.startsWith('http')) return url;
-    return 'http://10.0.2.2:8000$url';
+    if (url == null || url.isEmpty) {
+      return '';
+    }
+
+    if (url.startsWith('http')) {
+      return url;
+    }
+
+    return '${ApiService.baseUrl}$url';
   }
 
   @override
@@ -190,148 +347,281 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: openCreateMemoryDialog,
+        onPressed: () => openMemoryDialog(),
         icon: const Icon(Icons.add),
-        label: const Text('Memória'),
+        label: const Text('MemÃ³ria'),
       ),
       body: SafeArea(
         child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                padding: const EdgeInsets.all(20),
-                children: [
-                  const Text(
-                    'LINHA DO TEMPO',
-                    style: TextStyle(
-                      color: AppTheme.purple,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : RefreshIndicator(
+                onRefresh: loadMemories,
+                child: ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    const Text(
+                      'LINHA DO TEMPO',
+                      style: TextStyle(
+                        color: AppTheme.purple,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Memórias',
-                    style: TextStyle(
-                      color: AppTheme.darkText,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w900,
+                    const SizedBox(height: 4),
+                    const Text(
+                      'MemÃ³rias',
+                      style: TextStyle(
+                        color: AppTheme.darkText,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 22),
-                  PremiumCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.photo_camera_rounded,
-                          size: 54,
-                          color: AppTheme.purple,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Guarde os melhores momentos',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
+                    const SizedBox(height: 22),
+                    PremiumCard(
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.photo_camera_rounded,
+                            size: 54,
+                            color: AppTheme.purple,
                           ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Guarde os melhores momentos',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            memories.isEmpty
+                                ? 'Nenhuma memÃ³ria ainda.'
+                                : '${memories.length} memÃ³ria(s) salva(s).',
+                            style: const TextStyle(
+                              color: AppTheme.mutedText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    if (memories.isEmpty)
+                      const _EmptyMemoryCard()
+                    else
+                      ...memories.map(
+                        (memory) => _MemoryCard(
+                          memory: memory,
+                          photoUrl:
+                              fullPhotoUrl(memory.photoUrl),
+                          ratingText:
+                              ratingText(memory.rating),
+                          onEdit: () =>
+                              openMemoryDialog(memory: memory),
+                          onDelete: () =>
+                              confirmDelete(memory),
                         ),
-                        const SizedBox(height: 8),
+                      ),
+                    const SizedBox(height: 80),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+class _PhotoPlaceholder extends StatelessWidget {
+  const _PhotoPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 170,
+      width: double.infinity,
+      color: AppTheme.softPurple,
+      child: const Center(
+        child: Icon(
+          Icons.photo_camera_rounded,
+          size: 48,
+          color: AppTheme.purple,
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyMemoryCard extends StatelessWidget {
+  const _EmptyMemoryCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: const Column(
+        children: [
+          Icon(
+            Icons.favorite_border_rounded,
+            size: 48,
+            color: AppTheme.purple,
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Nenhuma memÃ³ria ainda',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Toque em MemÃ³ria para registrar o primeiro momento.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppTheme.mutedText,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MemoryCard extends StatelessWidget {
+  final MemoryItem memory;
+  final String photoUrl;
+  final String ratingText;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _MemoryCard({
+    required this.memory,
+    required this.photoUrl,
+    required this.ratingText,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (photoUrl.isNotEmpty)
+            Image.network(
+              photoUrl,
+              height: 190,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  const _PhotoPlaceholder(),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              18,
+              14,
+              8,
+              18,
+            ),
+            child: Row(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        memory.title,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.darkText,
+                        ),
+                      ),
+                      if (memory.description != null &&
+                          memory.description!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
                         Text(
-                          memories.isEmpty
-                              ? 'Nenhuma memória ainda.'
-                              : '${memories.length} memória(s) salva(s).',
-                          style: const TextStyle(color: AppTheme.mutedText),
+                          memory.description!,
+                          style: const TextStyle(
+                            color: AppTheme.mutedText,
+                          ),
                         ),
                       ],
-                    ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '${memory.placeName?.isNotEmpty == true ? memory.placeName : "Lugar nÃ£o informado"} â€¢ $ratingText',
+                        style: const TextStyle(
+                          color: AppTheme.purple,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 18),
-                  if (memories.isEmpty)
-                    const InfoTile(
-                      icon: '♡',
-                      title: 'Nenhuma memória ainda',
-                      subtitle: 'Toque em Memória para registrar a primeira.',
-                    )
-                  else
-                    ...memories.map(
-                      (memory) {
-                        final photo = fullPhotoUrl(memory.photoUrl);
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.08),
-                                blurRadius: 18,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (photo.isNotEmpty)
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(24),
-                                  ),
-                                  child: Image.network(
-                                    photo,
-                                    height: 190,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(
-                                      height: 150,
-                                      color: AppTheme.softPurple,
-                                      child: const Center(
-                                        child: Icon(Icons.broken_image_rounded),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              Padding(
-                                padding: const EdgeInsets.all(18),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      memory.title,
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w900,
-                                        color: AppTheme.darkText,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    if (memory.description != null &&
-                                        memory.description!.isNotEmpty)
-                                      Text(
-                                        memory.description!,
-                                        style: const TextStyle(
-                                          color: AppTheme.mutedText,
-                                        ),
-                                      ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      '${memory.placeName ?? "Lugar não informado"} • ${ratingText(memory.rating)}',
-                                      style: const TextStyle(
-                                        color: AppTheme.purple,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      onEdit();
+                    } else if (value == 'delete') {
+                      onDelete();
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: ListTile(
+                        dense: true,
+                        leading: Icon(Icons.edit_rounded),
+                        title: Text('Editar'),
+                      ),
                     ),
-                ],
-              ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: ListTile(
+                        dense: true,
+                        leading: Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.red,
+                        ),
+                        title: Text(
+                          'Excluir',
+                          style: TextStyle(
+                            color: Colors.red,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

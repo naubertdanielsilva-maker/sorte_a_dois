@@ -12,7 +12,7 @@ class MemoryItem {
   final String? placeName;
   final int? rating;
 
-  MemoryItem({
+  const MemoryItem({
     required this.id,
     required this.title,
     this.description,
@@ -23,12 +23,12 @@ class MemoryItem {
 
   factory MemoryItem.fromJson(Map<String, dynamic> json) {
     return MemoryItem(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      photoUrl: json['photo_url'],
-      placeName: json['place_name'],
-      rating: json['rating'],
+      id: json['id'] as int,
+      title: json['title'] as String,
+      description: json['description'] as String?,
+      photoUrl: json['photo_url'] as String?,
+      placeName: json['place_name'] as String?,
+      rating: json['rating'] as int?,
     );
   }
 }
@@ -37,18 +37,34 @@ class MemoryService {
   static Future<List<MemoryItem>> getMemories() async {
     final dashboard = await DashboardService.loadDashboard();
 
-    if (dashboard.coupleId == 0) return [];
+    if (dashboard.coupleId == 0) {
+      return [];
+    }
 
-    final data = await ApiService.get('/memories/couple/${dashboard.coupleId}');
+    final data = await ApiService.get(
+      '/memories/couple/${dashboard.coupleId}',
+    );
 
-    return (data as List).map((e) => MemoryItem.fromJson(e)).toList();
+    return (data as List)
+        .map(
+          (item) => MemoryItem.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
   }
 
   static Future<String?> uploadMemoryPhoto(File? file) async {
-    if (file == null) return null;
+    if (file == null) {
+      return null;
+    }
 
-    final data = await ApiService.uploadPhoto('/uploads/photo', file);
-    return data['url'];
+    final data = await ApiService.uploadPhoto(
+      '/api/uploads/photo',
+      file,
+    );
+
+    return data['url'] as String?;
   }
 
   static Future<void> createMemory({
@@ -62,7 +78,7 @@ class MemoryService {
     final userId = await AuthService.getUserId();
 
     if (userId == null) {
-      throw Exception('Usuário não encontrado.');
+      throw Exception('UsuÃ¡rio nÃ£o encontrado.');
     }
 
     final photoUrl = await uploadMemoryPhoto(photoFile);
@@ -78,5 +94,31 @@ class MemoryService {
       'rating': rating,
       'created_by_user_id': userId,
     });
+  }
+
+  static Future<void> updateMemory({
+    required int memoryId,
+    required String title,
+    required String description,
+    required String placeName,
+    required int rating,
+    required String? currentPhotoUrl,
+    File? newPhotoFile,
+  }) async {
+    final photoUrl = newPhotoFile == null
+        ? currentPhotoUrl
+        : await uploadMemoryPhoto(newPhotoFile);
+
+    await ApiService.patch('/memories/$memoryId', {
+      'title': title,
+      'description': description,
+      'photo_url': photoUrl,
+      'place_name': placeName,
+      'rating': rating,
+    });
+  }
+
+  static Future<void> deleteMemory(int memoryId) async {
+    await ApiService.delete('/memories/$memoryId');
   }
 }
