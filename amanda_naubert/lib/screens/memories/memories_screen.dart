@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:gal/gal.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../../services/api_service.dart';
@@ -47,13 +49,9 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     }
   }
 
-  Future<void> openMemoryDialog({
-    MemoryItem? memory,
-  }) async {
+  Future<void> openMemoryDialog({MemoryItem? memory}) async {
     final isEditing = memory != null;
-    final titleController = TextEditingController(
-      text: memory?.title ?? '',
-    );
+    final titleController = TextEditingController(text: memory?.title ?? '');
     final descriptionController = TextEditingController(
       text: memory?.description ?? '',
     );
@@ -104,8 +102,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 height: 170,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    const _PhotoPlaceholder(),
+                errorBuilder: (_, __, ___) => const _PhotoPlaceholder(),
               );
             }
 
@@ -114,22 +111,15 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
           Future<void> save() async {
             final title = titleController.text.trim();
-            final rating =
-                int.tryParse(ratingController.text.trim()) ?? 5;
+            final rating = int.tryParse(ratingController.text.trim()) ?? 5;
 
             if (title.isEmpty) {
-              showMessage(
-                'Informe o título da memória.',
-                isError: true,
-              );
+              showMessage('Informe o título da memória.', isError: true);
               return;
             }
 
             if (rating < 1 || rating > 5) {
-              showMessage(
-                'A nota deve estar entre 1 e 5.',
-                isError: true,
-              );
+              showMessage('A nota deve estar entre 1 e 5.', isError: true);
               return;
             }
 
@@ -140,8 +130,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 await MemoryService.updateMemory(
                   memoryId: memory.id,
                   title: title,
-                  description:
-                      descriptionController.text.trim(),
+                  description: descriptionController.text.trim(),
                   placeName: placeController.text.trim(),
                   rating: rating,
                   currentPhotoUrl: memory.photoUrl,
@@ -150,8 +139,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               } else {
                 await MemoryService.createMemory(
                   title: title,
-                  description:
-                      descriptionController.text.trim(),
+                  description: descriptionController.text.trim(),
                   placeName: placeController.text.trim(),
                   rating: rating,
                   photoFile: selectedPhoto,
@@ -177,9 +165,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
           }
 
           return AlertDialog(
-            title: Text(
-              isEditing ? 'Editar memória' : 'Nova memória',
-            ),
+            title: Text(isEditing ? 'Editar memória' : 'Nova memória'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -193,35 +179,27 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                     onPressed: saving ? null : pickPhoto,
                     icon: const Icon(Icons.image_rounded),
                     label: Text(
-                      selectedPhoto == null
-                          ? 'Escolher foto'
-                          : 'Trocar foto',
+                      selectedPhoto == null ? 'Escolher foto' : 'Trocar foto',
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: titleController,
                     enabled: !saving,
-                    decoration: const InputDecoration(
-                      labelText: 'Título',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Título'),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: descriptionController,
                     enabled: !saving,
                     maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Descrição',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Descrição'),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: placeController,
                     enabled: !saving,
-                    decoration: const InputDecoration(
-                      labelText: 'Lugar',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Lugar'),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -272,21 +250,15 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Excluir memória?'),
-        content: Text(
-          'A memória "${memory.title}" será removida.',
-        ),
+        content: Text('A memória "${memory.title}" será removida.'),
         actions: [
           TextButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Excluir'),
           ),
         ],
@@ -306,21 +278,51 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     }
   }
 
-  void showMessage(
-    String message, {
-    bool isError = false,
-  }) {
+  Future<void> downloadMemoryPhoto(MemoryItem memory) async {
+    final photoUrl = fullPhotoUrl(memory.photoUrl);
+
+    if (photoUrl.isEmpty) {
+      showMessage('Esta memória não possui foto.', isError: true);
+      return;
+    }
+
+    try {
+      final response = await http
+          .get(Uri.parse(photoUrl))
+          .timeout(const Duration(seconds: 60));
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('Não foi possível baixar a foto.');
+      }
+
+      var hasAccess = await Gal.hasAccess();
+
+      if (!hasAccess) {
+        await Gal.requestAccess();
+        hasAccess = await Gal.hasAccess();
+      }
+
+      if (!hasAccess) {
+        throw Exception('Permissão para salvar na galeria foi negada.');
+      }
+
+      await Gal.putImageBytes(response.bodyBytes);
+
+      showMessage('Foto salva na galeria do celular.');
+    } catch (error) {
+      showMessage(error.toString(), isError: true);
+    }
+  }
+
+  void showMessage(String message, {bool isError = false}) {
     if (!mounted) {
       return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message.replaceAll('Exception: ', ''),
-        ),
-        backgroundColor:
-            isError ? Colors.red : AppTheme.purple,
+        content: Text(message.replaceAll('Exception: ', '')),
+        backgroundColor: isError ? Colors.red : AppTheme.purple,
       ),
     );
   }
@@ -353,9 +355,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       ),
       body: SafeArea(
         child: isLoading
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
+            ? const Center(child: CircularProgressIndicator())
             : RefreshIndicator(
                 onRefresh: loadMemories,
                 child: ListView(
@@ -381,8 +381,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                     const SizedBox(height: 22),
                     PremiumCard(
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Icon(
                             Icons.photo_camera_rounded,
@@ -402,9 +401,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                             memories.isEmpty
                                 ? 'Nenhuma memória ainda.'
                                 : '${memories.length} memória(s) salva(s).',
-                            style: const TextStyle(
-                              color: AppTheme.mutedText,
-                            ),
+                            style: const TextStyle(color: AppTheme.mutedText),
                           ),
                         ],
                       ),
@@ -416,14 +413,11 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                       ...memories.map(
                         (memory) => _MemoryCard(
                           memory: memory,
-                          photoUrl:
-                              fullPhotoUrl(memory.photoUrl),
-                          ratingText:
-                              ratingText(memory.rating),
-                          onEdit: () =>
-                              openMemoryDialog(memory: memory),
-                          onDelete: () =>
-                              confirmDelete(memory),
+                          photoUrl: fullPhotoUrl(memory.photoUrl),
+                          ratingText: ratingText(memory.rating),
+                          onEdit: () => openMemoryDialog(memory: memory),
+                          onDelete: () => confirmDelete(memory),
+                          onDownload: () => downloadMemoryPhoto(memory),
                         ),
                       ),
                     const SizedBox(height: 80),
@@ -468,26 +462,17 @@ class _EmptyMemoryCard extends StatelessWidget {
       ),
       child: const Column(
         children: [
-          Icon(
-            Icons.favorite_border_rounded,
-            size: 48,
-            color: AppTheme.purple,
-          ),
+          Icon(Icons.favorite_border_rounded, size: 48, color: AppTheme.purple),
           SizedBox(height: 12),
           Text(
             'Nenhuma memória ainda',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
           ),
           SizedBox(height: 6),
           Text(
             'Toque em Memória para registrar o primeiro momento.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppTheme.mutedText,
-            ),
+            style: TextStyle(color: AppTheme.mutedText),
           ),
         ],
       ),
@@ -501,6 +486,7 @@ class _MemoryCard extends StatelessWidget {
   final String ratingText;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onDownload;
 
   const _MemoryCard({
     required this.memory,
@@ -508,6 +494,7 @@ class _MemoryCard extends StatelessWidget {
     required this.ratingText,
     required this.onEdit,
     required this.onDelete,
+    required this.onDownload,
   });
 
   @override
@@ -535,24 +522,16 @@ class _MemoryCard extends StatelessWidget {
               height: 190,
               width: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  const _PhotoPlaceholder(),
+              errorBuilder: (_, __, ___) => const _PhotoPlaceholder(),
             ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-              18,
-              14,
-              8,
-              18,
-            ),
+            padding: const EdgeInsets.fromLTRB(18, 14, 8, 18),
             child: Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         memory.title,
@@ -567,9 +546,7 @@ class _MemoryCard extends StatelessWidget {
                         const SizedBox(height: 6),
                         Text(
                           memory.description!,
-                          style: const TextStyle(
-                            color: AppTheme.mutedText,
-                          ),
+                          style: const TextStyle(color: AppTheme.mutedText),
                         ),
                       ],
                       const SizedBox(height: 10),
@@ -585,13 +562,23 @@ class _MemoryCard extends StatelessWidget {
                 ),
                 PopupMenuButton<String>(
                   onSelected: (value) {
-                    if (value == 'edit') {
+                    if (value == 'download') {
+                      onDownload();
+                    } else if (value == 'edit') {
                       onEdit();
                     } else if (value == 'delete') {
                       onDelete();
                     }
                   },
                   itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: 'download',
+                      child: ListTile(
+                        dense: true,
+                        leading: Icon(Icons.download_rounded),
+                        title: Text('Salvar foto'),
+                      ),
+                    ),
                     PopupMenuItem(
                       value: 'edit',
                       child: ListTile(
@@ -610,9 +597,7 @@ class _MemoryCard extends StatelessWidget {
                         ),
                         title: Text(
                           'Excluir',
-                          style: TextStyle(
-                            color: Colors.red,
-                          ),
+                          style: TextStyle(color: Colors.red),
                         ),
                       ),
                     ),
